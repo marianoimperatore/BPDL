@@ -29,7 +29,6 @@ from itertools import product, combinations, combinations_with_replacement
 import random
 import pdb
 import pandas as pd
-from multiprocessing import Pool
 import re 
 import warnings
 warnings.filterwarnings("ignore")
@@ -63,8 +62,8 @@ import func0 as func
 # toy model
 
 # real region
-# sys.argv = ['cosimo','-model','rnactcf5','-modelName','bpdl', '-procid', '0','-maxt','100000','-tit','3000','-tsam','lin','-param','deg2e2','-therm','SD','-c','c0CH','-reg','rnactcf5','-dopt','dCTpd,P2less2,P2passCH']
-# sys.argv = ['cosimo','-model','deg2','-modelName','bpdl', '-procid', '0','-maxt','100000','-tit','100','-tsam','lin','-param','deg2e2','-therm','SD','-c','c0CH','-reg','chr2s1s1z1m1','-dopt','dCTp,dCHp3,dP2less2,P2passCH']
+# sys.argv = ['cosimo','-model','rnactcf5','-modelName','bpdl', '-procid', '0','-maxt','100000','-tit','3000','-tsam','lin','-param','deg2e2','-c','c0CH','-reg','rnactcf5','-dopt','dCTpd,P2less2,P2passCH']
+# sys.argv = ['cosimo','-model','deg2','-modelName','bpdl', '-procid', '0','-maxt','100000','-tit','100','-tsam','lin','-param','deg2e2','-c','c0CH','-reg','chr2s1s1z1m1','-dopt','dCTp,dCHp3,dP2less2,P2passCH']
 # zero RA concentration
 
 

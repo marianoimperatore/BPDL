@@ -53,10 +53,6 @@ class bpdl():
         
 
         
-        # =============================================================================
-        #         Variate options string
-        # =============================================================================
-        self.otheropts = 'd0' 
         
         
                 
@@ -89,7 +85,6 @@ class bpdl():
         self.spring_type = []
         self.anistype = [6,8]
         self.anistypebond = [7,9]
-        self.pol_change = [22]
         
         
         self.npoly = 1
@@ -104,11 +99,11 @@ class bpdl():
         #         Set up polymers and types
         # =============================================================================
         self.modelods = 'degron'
-        self.modelods_modelsheet = 'HMMmodel'
-        self.modelods_energysheet = 'paramtypeReal'
-        self.modelods_paramsheet = 'paramReal'
+        self.modelods_modelsheet = 'epigClasses'
+        self.modelods_energysheet = 'paramtype'
+        self.modelods_paramsheet = 'param'
         self.modelods_concsheet = 'concentrations'
-        self.modelname = 'sbsle9'
+        self.modelname = 'model1'
 
         self.artifSys = [ env.strHome + '/' +'degron_sys.ods', self.strReg ]
         self.npol, self.taillen, self.binning, self.bsmap, self.genome, self.binning2 = func.genReal( self )
@@ -122,9 +117,7 @@ class bpdl():
 
         ######## types
         self.pol_type = list( self.bsmap.sort_values('type').type.unique()  )
-        if 'pol_change' in locals():
-            self.pol_type += self.pol_change
-        
+
         self.ptail = [ self.tailtyp ]
         self.ctail = [ ]           
             
@@ -329,14 +322,7 @@ class bpdl():
             print('--> no. of particles and box size: dense environment. Concentration given:', self.molC, 'n mol / liter')
             self.molNpartAll, self.b, self.tB, self.sig, self.tau, self.tLJ = func.calcUnits( self.molAll, self.npol, [self.chrend], [self.chrstart], self.bond_length, eta=.025)
             
-            if self.otheropts == 'd5':
-                bfact = 2
-                self.b = bfact * self.b
-            elif self.otheropts == 'd6':
-                bfact = 2
-                self.b = bfact * self.b
-                self.molNpartAll = [ bfact**3 * numi for numi in self.molNpartAll]
-            
+
             
             self.molPart = self.molNpartAll[:len(self.molC)]
             self.ndimi = self.molNpartAll[len(self.molC):]
@@ -444,14 +430,14 @@ class bpdl():
                 
 
             
-            if re.match( '.*dCHp3.*', self.otheropts):   
+            if re.match( '.*dCHp1.*', self.otheropts):   
                 self.lopeBirthProbType = np.ones( len(self.pol_type)) * .1 # [.9,.1,0,.1,0]
                 self.lopeBirthProbType[ np.where( np.isin( np.array(self.pol_type), self.tailtyp))[0]] = 0
 
                 self.lopeBirthProbTypeBase = np.ones( len(self.pol_type)) * .1 # [.9,.1,0,.1,0]
                 self.lopeBirthProbTypeBase [ np.where( np.isin( np.array(self.pol_type), self.tailtyp))[0]] = 0
 
-            elif re.match( '.*dCHp5.*', self.otheropts):   
+            elif re.match( '.*dCHp2.*', self.otheropts):   
                 self.lopeBirthProbType = np.ones( len(self.pol_type)) * .1 # [.9,.1,0,.1,0]
                 self.lopeBirthProbType[ np.where( np.isin( np.array(self.pol_type), self.lopeHighProbBirthType))[0]] = .9
                 self.lopeBirthProbType[ np.where( np.isin( np.array(self.pol_type), self.tailtyp))[0]] = 0
@@ -497,13 +483,7 @@ class bpdl():
         # Reel extrusion settings
         # =============================================================================
         try:
-            
-            if re.match( '.*P2passCH.*', self.otheropts):   
-                self.P2passCH = 'P2pass'
-            elif re.match( '.*P2bothpassCH.*', self.otheropts):   
-                self.P2passCH = 'both'            
-            elif re.match( '.*P2notpassCH.*', self.otheropts):   
-                self.P2passCH = 'P2notpass'            
+            self.P2passCH = 'P2pass'
             
             Ereel = self.Energies.set_index(['model','inter']).loc[(self.paramlist,'reel')]
                 
