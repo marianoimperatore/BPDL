@@ -18,7 +18,7 @@ When launched from within the downloading folder, the following command can be u
 
 pypresso bpdl.py -model deg2 -modelName bpdl -procid 1 -maxt 100000 -tit 100 -tsam lin -param deg2e2 -c c0 -reg chr2s1s1z1m1 -dopt dCHp2
 
-3D configurations will be generated in the same folder ('.'), according to the name given to the model.
+3D configurations will be saved in a new folder within the downloading folder, according to the name given to the model.
 
 In the folder ./obs additional files will contain additional observables:
 - obs : Gyration radius of the different model's types
