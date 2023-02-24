@@ -541,6 +541,185 @@ def str2list( stri):
 
 
 
+def genArtificial( model, strpart= 'natural' ):
+    ## process .bed artificial sysstem file
+    header = ['chrom', 'chromStart', 'chromEnd', 'name', 'annot', 'strand', 'score' ]
+    chrArt = pd.read_excel( model.artifSys[0] , engine="odf", sheet_name= model.artifSys[1], index_col=False, usecols=header)
+    chrArt.columns = header[:len(chrArt.columns)]
+    chromArt_map = pd.read_excel( env.strHome + '/' + model.modelods + '_model.ods', engine="odf", sheet_name= model.modelods_modelsheet, index_col=False)
+    
+    chromArt2 = chrArt.merge( chromArt_map, how='left', left_on='name', right_on='name' )
+   
+    chromArt2['dchrbp'] = chromArt2['chromEnd'] - chromArt2['chromStart']
+
+    
+    parampd = pd.read_excel( model.artifSys[0] , engine="odf", sheet_name= 'param' , index_col=False)
+    model.bpres = parampd[parampd.ssystem == model.artifSys[1] ].bpres.values[0]
+    taillentmp = parampd[parampd.ssystem == model.artifSys[1] ].taillength.values[0]
+
+    chromArt2['chromStart'] = chromArt2['chromStart'] * model.bpres
+    chromArt2['chromEnd'] = chromArt2['chromEnd'] * model.bpres
+    chrNamAnnot = chromArt2[['name','annot']].drop_duplicates()
+    chrNamAnnot['nameAnnot'] = chrNamAnnot['name'] + '+' + chrNamAnnot['annot']
+    chrNamAnnot['class'] = chrNamAnnot.index
+
+    chromArt2 = chromArt2.merge( chrNamAnnot, on=['name','annot'], how='left')
+
+
+    ##
+    chrnames = chromArt2.chrom.unique()
+    chrL = []
+    for chrnamei in chrnames:
+        chrL += [[
+            chrnamei ,
+            chromArt2[ chromArt2.chrom == chrnamei ].chromStart.iloc[0] ,
+            chromArt2[ chromArt2.chrom == chrnamei ].chromEnd.iloc[-1]
+            ]]
+    
+
+    ##
+    polid, npol, taillen = 0, [], []
+    binning, bsmap = pd.DataFrame([]), pd.DataFrame([])
+    for chrname, chrstart, chrend in chrL:
+        print( 'Polymer: ', chrname, chrstart, chrend)
+
+        # this selects the region 
+        chrsub = chromArt2[ (chromArt2['chrom']== chrname) & ( chromArt2['chromStart'] >= chrstart) & ( chromArt2['chromEnd'] <= chrend) ]
+        # chrsub['chromCenter'] = ((chrsub['chromEnd']+chrsub['chromStart'])/2.).astype(int)
+
+        
+        
+        # create partition
+        if strpart == 'natural':
+            part = np.arange( chrsub['chromStart'].values[0], chrsub['chromEnd'].values[-1], model.bpres )
+        elif strpart == 'hicpart':
+            # map into the hic matrix
+            part = np.int_( np.arange( 
+                np.round( chrsub['chromStart'].values[0] / model.bpres ) * model.bpres , 
+                np.round( chrsub['chromEnd'].values[-1] / model.bpres ) * model.bpres +1, 
+                model.bpres
+                ) )
+        elif strpart == 'given':
+            part = partgiven
+            
+        # pdb.set_trace()
+        partdf = pd.DataFrame( part, columns=['part'])
+        # partdf['partCenter'] = ((partdf + partdf.shift(-1))/2.)
+        partdf.dropna(how='any', axis=0, inplace=True)
+        # partdf.partCenter = partdf.partCenter.astype(int)
+        # partdf['partCenter'] = ((partdf['chromEnd']+partdf['chromStart'])/2.).astype(int)
+        
+        # merge as of
+        # pdb.set_trace()
+        part2 = pd.merge_asof( chrsub[['chromStart','name', 'annot', 'strand', 'class' , model.modelname]], partdf, 
+                              left_on = 'chromStart', right_on ='part' ,  
+                              tolerance= model.bpres, direction='nearest' )
+        
+        part2['partn'] = (part2['part'] / model.bpres) # .astype( np.int32)
+        part2[ 'class' ] = part2[ 'class' ].astype('int')
+        
+        # remove classes that are contiguous and identical (this can happen because we remove intervals below threshold bpmin )
+        part2['dclass']= part2.shift(-1)[ 'class' ] - part2[ 'class' ]
+        part4 = part2[ part2['dclass'] != 0]        
+        
+        
+        # calculate how many beads are in each interval
+        part4['dpn'] = part4.shift(-1)['partn'] - part4['partn']
+        part4['dpn2'] = part4['dpn']
+        
+        # deal with last interval
+        part4['dpn2'].iloc[-1] = np.round( (chrsub['chromEnd'].values[-1] - part4['chromStart'].values[-1]) / model.bpres )
+        part4['dpn'].iloc[-1] = part4['dpn2'].iloc[-1]
+        
+        # assign 1 bead to all intervals smaller than bpres
+        part4.replace({'dpn2':{0:1}}, inplace=True)
+        part4['dpn2'] = part4['dpn2'].astype('int')
+        
+        
+        # calculate how many beads are there
+        part4['cumpos'] = part4['dpn2'].cumsum() # .shift(+1, fill_value=0) # part4.partn2.values - part4 ['partn2'].iloc[0]
+        bslen = part4['dpn2'].sum()
+        # estimate tails of polymer
+        # taillentmp = np.int_( np.round( bslen ** (1/2) ) )
+        npoltmp = 2 * taillentmp + bslen
+        
+        
+        # tails
+        taildf = pd.DataFrame(
+            np.zeros( ( 1,  part4.shape[1])) * np.nan ,
+            columns = part4.columns
+            )
+        
+        taildf[ model.modelname ] = int( model.tailtyp )
+        taildf['dpn2'] = taillentmp
+        taildf['dpn'] = taillentmp
+        
+        part4 = taildf.append( part4.append( taildf))
+        
+        
+        
+        
+        
+        
+        # create binning from partition
+        binntmp = partdf.merge( part4, how= 'left', on='part')
+        binntmp[ 'class' ] = binntmp[ 'class' ].fillna( method='ffill')
+        binntmp['type'] = binntmp[ model.modelname ]
+
+        if binntmp.dpn2.sum() != binntmp.shape[0]:
+            print('This is not good! binning.dpn2.sum() != binning.shape[0]')
+            raise 
+            
+        taildf = pd.DataFrame(
+            np.zeros( ( 1,  binntmp.shape[1])) * np.nan ,
+            columns = binntmp.columns
+            )
+        # pdb.set_trace()
+        taildf['type'] = int( model.tailtyp )
+        taildf['part'] = - 2 * (polid+1) 
+        binntmp = binntmp.append( taildf)
+
+        taildf['part'] = - 2 * (polid+1) +1
+        binntmp = taildf.append( binntmp )
+            
+            
+        
+        
+        # map of bs
+        bsmaptmp = part4[[ model.modelname ,'dpn2','chromStart']]
+        bsmaptmp.columns = ['type','bsbatch','chromStart']
+        
+        
+        
+        ###
+        binntmp['polyid'] = polid
+        binning = binning.append( binntmp)
+        
+        ###
+        bsmaptmp['polyid'] = polid
+        bsmaptmp['monocumsum'] = bsmaptmp['bsbatch'].cumsum()
+        bsmap = bsmap.append( bsmaptmp)
+
+        ###        
+        polid = polid + 1
+        taillen += [taillentmp]
+        npol += [npoltmp]
+        
+        
+        ### genome
+        genome = [ int(bsmap.chromStart.min())]
+        genome += [ int(bsmap.chromStart.max() + model.bpres)]
+        genome += [ model.bpres]
+    
+    
+    
+    return npol, taillen, binning, bsmap, genome
+
+
+
+
+
+
 
 def genReal( model, strpart= 'natural' ):
     ## process .bed artificial sysstem file

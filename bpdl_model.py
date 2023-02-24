@@ -106,9 +106,14 @@ class bpdl():
         self.modelname = 'model1'
 
         self.artifSys = [ env.strHome + '/' +'degron_sys.ods', self.strReg ]
-        self.npol, self.taillen, self.binning, self.bsmap, self.genome, self.binning2 = func.genReal( self )
 
-        self.chrname, self.chrstart, self.chrend, self.bpres = self.genome
+        try:
+            self.npol, self.taillen, self.binning, self.bsmap, self.genome, self.binning2 = func.genReal( self )
+            self.chrname, self.chrstart, self.chrend, self.bpres = self.genome
+        except:
+            self.npol, self.taillen, self.binning, self.bsmap, self.genome = func.genArtificial( self )
+            self.chrstart, self.chrend, self.bpres = self.genome
+
         
         self.chrend = self.chrend + 2 * self.taillen[0] * self.bpres ### temp
 
@@ -319,7 +324,6 @@ class bpdl():
                   
             
             ###
-            print('--> no. of particles and box size: dense environment. Concentration given:', self.molC, 'n mol / liter')
             self.molNpartAll, self.b, self.tB, self.sig, self.tau, self.tLJ = func.calcUnits( self.molAll, self.npol, [self.chrend], [self.chrstart], self.bond_length, eta=.025)
             
 

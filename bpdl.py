@@ -45,8 +45,6 @@ import time
 import importlib
 
 
-if False:
-    os.chdir( '/usr/users/mariano/shupaper/MD_code' )
 
 #### import simulation settings
 import esprenv as env
@@ -59,11 +57,11 @@ import func0 as func
 
 
 
-# toy model
 
+# toy model
+# sys.argv = ['cosimo','-model','toymodel','-modelName','bpdl', '-procid', '0','-maxt','100000','-tit','100','-tsam','lin','-param','deg2e1','-c','c1','-reg','toymodel','-dopt','dCHp2']
 # real region
-# sys.argv = ['cosimo','-model','rnactcf5','-modelName','bpdl', '-procid', '0','-maxt','100000','-tit','3000','-tsam','lin','-param','deg2e2','-c','c0CH','-reg','rnactcf5','-dopt','dCTpd,P2less2,P2passCH']
-# sys.argv = ['cosimo','-model','deg2','-modelName','bpdl', '-procid', '0','-maxt','100000','-tit','100','-tsam','lin','-param','deg2e2','-c','c0CH','-reg','chr2s1s1z1m1','-dopt','dCTp,dCHp3,dP2less2,P2passCH']
+# sys.argv = ['cosimo','-model','deg2','-modelName','bpdl', '-procid', '0','-maxt','100000','-tit','100','-tsam','lin','-param','deg2e1','-c','c0','-reg','chr2s1s1z1m1','-dopt','dCHp1']
 # zero RA concentration
 
 
@@ -156,7 +154,7 @@ print( ssystem.cell_system.get_state())
 # =============================================================================
 # Build System & Run simulation
 # =============================================================================
-print('\n###----------------------------------------###\nsimulation settings:','\nstr_sys:', 
+print('\n###----------------------------------------###\nsimulation settings:','\nstr_syst:', 
       model.str_syst , 
       '| sys_param:', model.str_param_file1 , 
       '| str_tsam:', model.str_tsam , 
@@ -275,13 +273,10 @@ for iti in range( model.nite):
                 
                 
             ### exclude non bounded interaction for adjacent beads on same polymer
-            if ('DPD' in model.strTherm) and False:
-                pass
-            else:
-                for p in poly:
-                    for j, m in p[1:]:
-                        ssystem.part[ j].add_exclusion( j-1)
-    
+            for p in poly:
+                for j, m in p[1:]:
+                    ssystem.part[ j].add_exclusion( j-1)
+
     
             print('Polymer added')            
     
@@ -646,10 +641,8 @@ try:
             id2 = [ssystem.part[:].id [ type2[0] ], ssystem.part[:].id [ type2[1] ]]
             
             # where to stall?
-            if re.match( '.*Art.*|.*Real.*', model.modelods_paramsheet ):
-                model.idd1not = func.defLEtypes2( ssystem, model, strmode= model.lopeInsulMode )
-            else:
-                model.idd1not = func.defLEtypes2( ssystem, model, rseed= model.seedCtcfStall, coheStallSitesFract = model.coheStallSitesFract )
+            model.idd1not = func.defLEtypes2( ssystem, model, strmode= model.lopeInsulMode )
+
             
             #      
             if model.strLopeBond == 'fene':
